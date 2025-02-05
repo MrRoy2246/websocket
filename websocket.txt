@@ -1,0 +1,110 @@
+server.py
+-------------
+
+
+import asyncio
+import websockets
+
+async def hello(websocket):
+    name = await websocket.recv()
+    print(f'server received : {name}')
+    greeting = f'Hello {name} !'
+
+    await websocket.send(greeting)
+    print(f'server sent : {greeting}')
+async def main():
+    print("Server start with localhost:8765")
+    async with websockets.serve(hello,"localhost",8765):
+        await asyncio.Future()
+
+if __name__ =="__main__":
+    asyncio.run(main())
+
+
+
+
+client.py
+---------------
+import asyncio
+import websockets
+
+async def hello():
+    uri = "ws://localhost:8765"
+    async with websockets.connect(uri) as websocket:
+        name = input("What is  your name : ")
+        await websocket.send(name)
+        print(f'client sent : {name}')
+        greeting =  await websocket.recv()
+        print(f'client received : {greeting}')
+
+
+if __name__ == "__main__":
+    asyncio.run(hello())
+
+
+
+this work properly until i have close the server if i close the server it occur some issee
+
+
+
+
+----------------
+----------------
+----------------
+
+buzzer_server.py
+-----------------
+import asyncio
+import websockets
+
+#define a empty list
+clients =[]
+
+async def handle_message(websocket,path):
+    global clients
+    global fastest_time
+    message = await websocket.recv()
+    if message == "buzz":
+        response_time = asyncio.get_event_loop().time()
+        clients.append([websocket, response_time])
+        if len(clients) == 1:
+            await websocket.send("First place")
+            fasttest_time = response_time
+        else:
+            t = round(response_time-fasttest_time, 2)
+            await websocket.send(f"Respopnse time : {t} sec slower")
+
+async def start_server():
+    async with websockets.serve(handle_message, "localhost", 8765):
+        print("Websocket server started")
+        await asyncio.Future()
+asyncio.run(start_server())
+
+
+
+
+
+
+buzzer_client.py
+----------------
+import asyncio
+import websockets
+import keyboard
+
+async def start_client():
+    async with websockets.connect("ws://localhost:8765") as websocket:
+        done = False
+        while not done:
+            if keyboard.is_pressed("space"):
+                await websocket.send("buzz")
+                message = await websocket.recv()
+                print(message)
+                done = True
+
+asyncio.run(start_client())
+
+
+
+
+
+
